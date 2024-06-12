@@ -15,6 +15,7 @@ import seaborn as sns
 import math
 
 from os.path import exists
+import os
 from matplotlib.figure import Figure
 
 
@@ -84,6 +85,14 @@ order_ = {
     5: "Used in Last Week",
     6: "Used in Last Day",
 }
+
+
+def create_dirs():
+    if not exists("figures"):
+        os.mkdir("figures")
+
+    if not exists("results"):
+        os.mkdir("results")
 
 
 def run_or_load(path: str, func) -> tuple[pd.DataFrame, pd.DataFrame]:
