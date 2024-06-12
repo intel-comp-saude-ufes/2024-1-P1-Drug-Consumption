@@ -36,9 +36,9 @@ Subsequentemente, são exibidos boxplots e matrizes de confusão que determinam 
 
 Para continuar investigando possíveis combinações, um notebook extra examina vertentes do problema por aplicar mais configurações aos procedimentos. Os testes incluem:
  
- - Filtro de características,
- - Seleção de samples,
- - Aplicação de redução de dimensionalidade,
+ - Uso de métricas de personalidade somente,
+ - Filtro de idades,
+ - Redução de dimensionalidade por PCA,
  - Classificadores multiclasse.
 
 Com esses experimentos, procuramos encontrar padrões que possam estar menos reconhecíveis por conta da distribuição dos dados.

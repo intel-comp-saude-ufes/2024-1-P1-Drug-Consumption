@@ -6,6 +6,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold, GridSearchCV
 from sklearn.naive_bayes import GaussianNB, BernoulliNB
 from sklearn.neighbors import NearestCentroid, KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.base import clone
 
 import pandas as pd
 import numpy as np
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import math
 
+from os.path import exists
 from matplotlib.figure import Figure
 
 
@@ -51,10 +53,21 @@ drugs = [
 # Substâncias com menor relevância de análise.
 lesser_drugs = ["Choc", "Alcohol", "Caff"]
 
+# k substâncias escolhidas para análise profunda
+best_k = [
+    "Amphet",
+    "Cannabis",
+    "Ecstasy",
+    "Legalh",
+    "LSD",
+    "Mushrooms",
+    "Nicotine",
+]
+
 classifiers = [
-    (NearestCentroid(),),
-    (GaussianNB(),),
-    (BernoulliNB(),),
+    (NearestCentroid(), None),
+    (GaussianNB(), None),
+    (BernoulliNB(), None),
     (
         RandomForestClassifier(n_jobs=-1),
         dict(n_estimators=list([100, 200, 500]), max_depth=[8, 9, 10, 11, 12]),
@@ -71,6 +84,30 @@ order_ = {
     5: "Used in Last Week",
     6: "Used in Last Day",
 }
+
+
+def run_or_load(path: str, func) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Roda o experimento ou carrega uma execução salva anteriormente.
+
+    Args:
+        path (str): caminho do arquivo com formatação de "{a}" para preencher com "results" ou "cm".
+        func (_type_): função para execução do experimento.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: scores, matriz de confusão.
+    """
+    r_path = path.format(a="results")
+    cm_path = path.format(a="cm")
+
+    if func or (not exists(r_path) and not exists(cm_path)):
+        results, cm = func()
+        results.to_csv(r_path)
+        cm.to_csv(cm_path)
+    else:
+        results = pd.read_csv(r_path)
+        cm = pd.read_csv(cm_path)
+
+    return results, cm
 
 
 def build_dataset(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -130,24 +167,22 @@ def test_classifiers(
         + [f"cm_{i}" for i in range(n_classes * n_classes)]
     )
 
-    for c_ in classifiers:
-        param_grid = None if len(c_) == 1 else c_[1]
-
-        c = c_[0]
+    for c, param_grid in classifiers:
         name = c.__class__.__name__
-
         for d in drugs:
-            if param_grid is not None:
-                grid = GridSearchCV(c, param_grid, cv=4)
-                pipe_ = make_pipeline(*pipe, grid)
-            else:
-                pipe_ = make_pipeline(*pipe, c)
+            pipe_ = make_pipeline(
+                # *pipe, c if param_grid is None else GridSearchCV(c, param_grid, cv=4)
+                *pipe,
+                c,
+            )
 
             y = labels[d].to_numpy()
             results = []
 
             cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3)
             for train, test in cv.split(X, y):
+                pipe_ = clone(pipe_)
+
                 # fit & predict
                 pipe_.fit(X.iloc[train], y[train])
                 preds = pipe_.predict(X.iloc[test])
@@ -181,14 +216,14 @@ def get_k_highest_mean(df: pd.DataFrame, k: int = 5) -> list[str]:
 
     per_subs = df.groupby(by=["Substância"]).mean()
     subs = per_subs.sort_values(by=["Score"], ascending=False).index[:k]
-    return subs
+    return list(subs)
 
 
 def boxplot(
     df: pd.DataFrame,
     title="",
-    lims=(0.4, 1),
-    refs=[0.5, 0.8],
+    lims=(0, 1),
+    refs=None,
     substance_filter: None | list[str] = None,
 ) -> Figure:
     """Plota o boxplot de pontuações para cada substância e os modelos.
@@ -196,14 +231,19 @@ def boxplot(
     Args:
         df (pd.DataFrame): dataframe de pontuações com "Model", "Substância" e "Score".
         title (str, optional): título do boxplot. Defaults to "".
-        lims (tuple, optional): limites da figura. Defaults to (0.4, 1).
-        refs (list, optional): linhas para referência de pontuações. Defaults to [0.5, 0.8].
+        lims (tuple, optional): limites da figura. Defaults to (0, 1).
+        refs (list, optional): linhas para referência de pontuações. Defaults to None.
         substance_filter (None | list[str], optional): lista de substância a apresentar. Defaults to None.
 
     Returns:
         Figure: a figura que contém os boxplots.
     """
-    fig, ax = plt.subplots(1, 1, figsize=(22, 6), sharex=True, sharey=True)
+    data = df[df["Substância"].isin(substance_filter)] if substance_filter else df
+    subs = data["Substância"].nunique()
+    classifs = data["Model"].nunique()
+
+    figsize = (2 * subs, 2 * subs if 2 * subs <= 10 else 10)
+    fig, ax = plt.subplots(1, 1, figsize=figsize, sharex=True, sharey=True)
     ax.grid(True, axis="y")
 
     if lims is not None:
@@ -215,12 +255,17 @@ def boxplot(
 
     plt.title(title)
     sns.boxplot(
-        data=df[substance_filter] if substance_filter else df,
+        data=data,
         x="Substância",
         y="Score",
-        hue="Model",
+        hue="Model" if classifs > 1 else "Substância",
         ax=ax,
+        dodge=classifs > 1,
     )
+
+    if classifs == 1:
+        ax.legend({})
+        ax.set_xlabel("")
 
     return fig
 
