@@ -2,22 +2,18 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import balanced_accuracy_score, confusion_matrix
 from sklearn.pipeline import make_pipeline
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold, GridSearchCV
 from sklearn.naive_bayes import GaussianNB, BernoulliNB
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.neighbors import NearestCentroid
-from sklearn.semi_supervised import LabelPropagation, LabelSpreading
-from sklearn.discriminant_analysis import (
-    QuadraticDiscriminantAnalysis,
-    LinearDiscriminantAnalysis,
-)
-from sklearn.calibration import CalibratedClassifierCV
+from sklearn.neighbors import NearestCentroid, KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
+
+from matplotlib.figure import Figure
 
 
 numCols = [
@@ -56,15 +52,14 @@ drugs = [
 lesser_drugs = ["Choc", "Alcohol", "Caff"]
 
 classifiers = [
-    NearestCentroid(),
-    GaussianNB(),
-    BernoulliNB(),
-    QuadraticDiscriminantAnalysis(),
-    CalibratedClassifierCV(),
-    AdaBoostClassifier(),
-    LinearDiscriminantAnalysis(),
-    LabelPropagation(),
-    LabelSpreading(),
+    (NearestCentroid(),),
+    (GaussianNB(),),
+    (BernoulliNB(),),
+    (
+        RandomForestClassifier(n_jobs=-1),
+        dict(n_estimators=list([100, 200, 500]), max_depth=[8, 9, 10, 11, 12]),
+    ),
+    (KNeighborsClassifier(n_jobs=-1), dict(n_neighbors=list(range(5, 16, 2)))),
 ]
 
 order_ = {
@@ -76,6 +71,29 @@ order_ = {
     5: "Used in Last Week",
     6: "Used in Last Day",
 }
+
+
+def build_dataset(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Retorna o dataset com as filtragens feitas em "classification.ipynb".
+
+    Args:
+        data (pd.DataFrame): dataset pré-processado.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: X, labels
+    """
+    data_filtered = data[data["Semer"] == 0]
+
+    ignore_cols = (
+        ["Country", "Age_", "Education_", "Semer", "Semer_", "Ethnicity"]
+        + [x + "_" for x in drugs]
+        + drugs
+    )
+
+    X = data_filtered.drop(columns=ignore_cols)
+    y = data_filtered[drugs]
+
+    return X, y
 
 
 def metric_preprocessor():
@@ -112,16 +130,24 @@ def test_classifiers(
         + [f"cm_{i}" for i in range(n_classes * n_classes)]
     )
 
-    for c in classifiers:
+    for c_ in classifiers:
+        param_grid = None if len(c_) == 1 else c_[1]
+
+        c = c_[0]
         name = c.__class__.__name__
+
         for d in drugs:
-            pipe_ = make_pipeline(*pipe, c)
+            if param_grid is not None:
+                grid = GridSearchCV(c, param_grid, cv=4)
+                pipe_ = make_pipeline(*pipe, grid)
+            else:
+                pipe_ = make_pipeline(*pipe, c)
 
             y = labels[d].to_numpy()
             results = []
 
-            splitter = StratifiedKFold(8)
-            for train, test in splitter.split(X, y):
+            cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3)
+            for train, test in cv.split(X, y):
                 # fit & predict
                 pipe_.fit(X.iloc[train], y[train])
                 preds = pipe_.predict(X.iloc[test])
@@ -142,7 +168,29 @@ def test_classifiers(
     return all_df.melt("Model", var_name="Substância", value_name="Score"), conf_df
 
 
-def boxplot(df: pd.DataFrame, title="", lims=(0.4, 1), refs=[0.5, 0.8]) -> None:
+def get_k_highest_mean(df: pd.DataFrame, k: int = 5) -> list[str]:
+    """Retorna as k maiores médias no dataframe.
+
+    Args:
+        df (pd.DataFrame): dataframe com as substâncias e pontuações.
+        k (int, optional): número de itens a retornar. Defaults to 5.
+
+    Returns:
+        list[str]: lista de nomes de substâncias.
+    """
+
+    per_subs = df.groupby(by=["Substância"]).mean()
+    subs = per_subs.sort_values(by=["Score"], ascending=False).index[:k]
+    return subs
+
+
+def boxplot(
+    df: pd.DataFrame,
+    title="",
+    lims=(0.4, 1),
+    refs=[0.5, 0.8],
+    substance_filter: None | list[str] = None,
+) -> Figure:
     """Plota o boxplot de pontuações para cada substância e os modelos.
 
     Args:
@@ -150,8 +198,13 @@ def boxplot(df: pd.DataFrame, title="", lims=(0.4, 1), refs=[0.5, 0.8]) -> None:
         title (str, optional): título do boxplot. Defaults to "".
         lims (tuple, optional): limites da figura. Defaults to (0.4, 1).
         refs (list, optional): linhas para referência de pontuações. Defaults to [0.5, 0.8].
+        substance_filter (None | list[str], optional): lista de substância a apresentar. Defaults to None.
+
+    Returns:
+        Figure: a figura que contém os boxplots.
     """
-    _, ax = plt.subplots(1, 1, figsize=(22, 6), sharex=True, sharey=True)
+    fig, ax = plt.subplots(1, 1, figsize=(22, 6), sharex=True, sharey=True)
+    ax.grid(True, axis="y")
 
     if lims is not None:
         ax.set_ylim(*lims)
@@ -161,7 +214,15 @@ def boxplot(df: pd.DataFrame, title="", lims=(0.4, 1), refs=[0.5, 0.8]) -> None:
             plt.axhline(i, linestyle="--")
 
     plt.title(title)
-    sns.boxplot(data=df, x="Substância", y="Score", hue="Model", ax=ax)
+    sns.boxplot(
+        data=df[substance_filter] if substance_filter else df,
+        x="Substância",
+        y="Score",
+        hue="Model",
+        ax=ax,
+    )
+
+    return fig
 
 
 def confusion(cm: pd.DataFrame) -> None:

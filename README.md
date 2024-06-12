@@ -22,7 +22,7 @@ Na pasta `data/`, existem duas versões do dataset: a original e a pré-processa
 
 Dessa forma, o uso do notebook de pré-processamento não é necessário, mas serve para entender a nova organização do dataset.
 
-[descrever o notebook]
+Cada característica do dataset é analisada e são oferecidas explicações para cada escolha feita sobre os valores apresentados no dataset utilizado nos experimentos.
 
 ## Classificação
 
@@ -30,16 +30,15 @@ Nesse notebook, observamos várias facetas do problema, tentando encontrar padr�
 
 De início, utilizamos da biblioteca `LazyClassifier` para medir a capacidade de predição de vários classificadores em substâncias relevantes. Dessa forma, podemos filtrar um top $k$ de classificadores e testá-los corretamente na base de dados.
 
-Subsequentemente, são exibidas tabelas e testes que determinam a performance dos classificadores, entretanto, sem muito aprofundamento nas nuâncias do dataset.
+Subsequentemente, são exibidos boxplots e matrizes de confusão que determinam a performance dos classificadores.
 
-### Classificação +
+## Classificação +
 
-Para continuar investigando possíveis combinações, um notebook extra examina vertentes do problema por aplicar mais configurações aos procedimentos. Alguns dos testes incluem:
+Para continuar investigando possíveis combinações, um notebook extra examina vertentes do problema por aplicar mais configurações aos procedimentos. Os testes incluem:
  
  - Filtro de características,
  - Seleção de samples,
  - Aplicação de redução de dimensionalidade,
- - Classificadores multiclasse e
- - Classificadores multilabel.
+ - Classificadores multiclasse.
 
 Com esses experimentos, procuramos encontrar padrões que possam estar menos reconhecíveis por conta da distribuição dos dados.
