@@ -259,7 +259,7 @@ def boxplot(
         for i in refs:
             plt.axhline(i, linestyle="--")
 
-    plt.title(title)
+    # plt.title(title)
     sns.boxplot(
         data=data,
         x="Substância",
@@ -268,9 +268,13 @@ def boxplot(
         ax=ax,
         dodge=classifs > 1,
     )
+    
+    ax.tick_params(axis='both', labelsize=16)
 
     if classifs == 1:
-        ax.legend({})
+        leg = ax.get_legend()
+        if leg:
+            leg.remove()
         ax.set_xlabel("")
 
     return fig
