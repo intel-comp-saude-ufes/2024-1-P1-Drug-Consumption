@@ -71,9 +71,9 @@ classifiers = [
     (BernoulliNB(), None),
     (
         RandomForestClassifier(n_jobs=-1),
-        dict(n_estimators=list([100, 200, 500]), max_depth=[8, 9, 10, 11, 12]),
+        dict(max_depth=[9, 10, 11, 12]),
     ),
-    (KNeighborsClassifier(n_jobs=-1), dict(n_neighbors=list(range(5, 16, 2)))),
+    (KNeighborsClassifier(n_jobs=-1), dict(n_neighbors=list(range(7, 16, 2)))),
 ]
 
 order_ = {
@@ -179,11 +179,8 @@ def test_classifiers(
     for c, param_grid in classifiers:
         name = c.__class__.__name__
         for d in drugs:
-            pipe_ = make_pipeline(
-                # *pipe, c if param_grid is None else GridSearchCV(c, param_grid, cv=4)
-                *pipe,
-                c,
-            )
+            estimator = c if param_grid is None else GridSearchCV(c, param_grid, cv=4)
+            pipe_ = make_pipeline(*pipe, estimator)
 
             y = labels[d].to_numpy()
             results = []

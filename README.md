@@ -1,20 +1,28 @@
-# Drug Consumption Classifier
+# :pill: Drug Consumption Classifier
 
 Com este projeto, nós procuramos encontrar relações entre usuários de substâncias e algumas características pessoais e comportamentais.
 
 Este repositório contém o pré-processamento, as análises e alguns testes de classificadores no dataset.
 
-## Dataset
+## :open_file_folder: Dataset
 
 O dataset utilizado neste projeto pode ser encontrado [aqui](https://www.kaggle.com/datasets/mexwell/drug-consumption-classification). O [notebook de pré-processamento](https://www.kaggle.com/code/mexwell/starter-notebook-convert-column-values) que foi utilizado como base para processar os dados originais também foi disponibilizado pelo autor original.
 
-# Executando os Experimentos
+# :computer: Executando os Experimentos
 
 Para executar os notebooks, é necessário instalar alguns pacotes:
 
 ```bash
 pip install requirements.txt
 ```
+
+## Observação
+
+> Como uma parte dos experimentos envolve uma busca de hiperparâmetros, executar o notebook inteiro pode tomar muito tempo.
+>
+> Assim, nos notebooks de classificação há variáveis `run` que indicam se os experimentos devem ser executados ou se devem ser carregados os dados da execução salva em `results/`.
+>
+> Além disso, se o intuito for somente alterar as visualizações para tornar os resultados mais interpretáveis, são disponibilizados arquivos `.csv` para cada experimento executado. Tais arquivos podem ser encontrados em `results/`.
 
 ## Pré-processamento
 
