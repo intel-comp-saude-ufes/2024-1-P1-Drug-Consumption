@@ -128,16 +128,9 @@ def build_dataset(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     Returns:
         tuple[pd.DataFrame, pd.DataFrame]: X, labels
     """
-    data_filtered = data[data["Semer"] == 0]
 
-    ignore_cols = (
-        ["Country", "Age_", "Education_", "Semer", "Semer_", "Ethnicity"]
-        + [x + "_" for x in drugs]
-        + drugs
-    )
-
-    X = data_filtered.drop(columns=ignore_cols)
-    y = data_filtered[drugs]
+    X = data.drop(columns=drugs)
+    y = data[drugs]
 
     return X, y
 
