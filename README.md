@@ -4,6 +4,10 @@ Com este projeto, nós procuramos encontrar relações entre usuários de subst�
 
 Este repositório contém o pré-processamento, as análises e alguns testes de classificadores no dataset.
 
+> Você pode encontrar um vídeo resumindo o projeto [aqui](https://www.youtube.com/watch?v=QMbaKQqQSow).
+>
+> O artigo completo sobre o projeto está disponível [aqui](report/2024_1_P1_Drug_Consumption.pdf).
+
 ## Sumário
 - [Dataset](#dataset)
 - [Executando os Experimentos](#executando-os-experimentos)
