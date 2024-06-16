@@ -70,7 +70,7 @@ pip install -r requirements.txt
 
 ### Starter Notebook
 
-O dataset apresenta dados pouco legíveis e de difícil interpretação direta. Para facilitar o processo de análise, o autor do dataset disponibilizou um [notebook inicial (starter notebook)](starter_notebook.ipynb) que realiza a transformação desses dados, permitindo que as análises subsequentes sejam mais diretas. Realizamos algumas modificações que julgamos necessárias.
+O dataset apresenta dados pouco legíveis e de difícil interpretação direta. Para facilitar o processo de análise, o autor do dataset disponibilizou um [notebook inicial (starter notebook)](notebooks/00-starter_notebook.ipynb) que realiza a transformação desses dados, permitindo que as análises subsequentes sejam mais diretas. Realizamos algumas modificações que julgamos necessárias.
 
 Esse notebook tem como entrada o arquivo [drug_consumption](data/drug_consumption.csv) e gera como saída o arquivo [drug_consumption_prepared](data/drug_consumption_prepared.csv).
 
